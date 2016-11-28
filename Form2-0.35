@@ -1,0 +1,85 @@
+Imports System.Text 'Used for streamreader/streamwriter
+Imports System.Security.Cryptography 'Used for SHA512 hashing 
+
+Public Class Form2
+
+    'Assignment of files required for storage of user details
+    Dim UserFile As String = "D:\usernames.txt"
+    Dim SaltFile As String = "D:\salts.txt"
+    Dim PassFile As String = "D:\passwords.txt"
+
+    'This sub takes the input data and passes it to the relevant functions to add the user to the system
+    'provided that the input is valid and has been approved with the administrator's code
+    Private Sub Button1_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles Button1.Click
+        Dim Username As String = TextBox1.Text
+        Dim Password As String = TextBox2.Text
+        Dim Found As Boolean = False
+        Dim IsStaff As Boolean
+        If CheckBox1.Checked = True Then IsStaff = True
+        If TextBox3.Text = "Chinook01" Then
+            Dim UserReader As New System.IO.StreamReader(UserFile)
+            Do Until UserReader.Peek() = -1 Or Found = True
+                If UserReader.ReadLine() = Username Then
+                    Found = True
+                End If
+            Loop
+            If Found = True Then
+                MsgBox("That username is taken!")
+                UserReader.Close()
+            Else
+                UserReader.Close()
+                AddUser(Username, Password, IsStaff)
+                MsgBox("User added successfully")
+            End If
+        Else
+            MsgBox("Request Denied. Admin password required to process new account.")
+        End If
+
+    End Sub
+
+    'This sub adds a username and password to their respective files, calling the GenerateSalt
+    'and CalculateHash functions to do so
+    Public Sub AddUser(ByVal username As String, ByVal password As String, IsStaff As Boolean)
+        Dim UserWriter As New System.IO.StreamWriter(UserFile, True)
+        Dim SaltWriter As New System.IO.StreamWriter(SaltFile, True)
+        Dim PassWriter As New System.IO.StreamWriter(PassFile, True)
+        Dim NewFile As String = "D:\" & username & ".txt"
+        Dim salt As String = GenerateSalt()
+        Dim hashedPW As String = CalculateHash(password, salt)
+        Dim NewFileWriter As New System.IO.StreamWriter(NewFile)
+        UserWriter.WriteLine(username)
+        SaltWriter.WriteLine(salt)
+        PassWriter.WriteLine(hashedPW)
+        If IsStaff = True Then
+            NewFileWriter.WriteLine("True")
+        Else
+            NewFileWriter.WriteLine("False")
+        End If
+        UserWriter.Close()
+        SaltWriter.Close()
+        PassWriter.Close()
+        NewFileWriter.Close()
+    End Sub
+
+    'This function generates a random string of 32 characters to be appended to the password before generating the hash
+    Public Function GenerateSalt() As String
+        Randomize()
+        Dim salt As String = ""
+        For i As Integer = 1 To 32
+            Dim RandomCharacter As Char = Chr(Int(Math.Floor(94) * Rnd()) + 33)
+            salt &= RandomCharacter
+        Next
+        MsgBox(salt)
+        Return salt
+    End Function
+
+    'This function takes the entered password and salt and calculates the corresponding SHA512 hash
+    Public Function CalculateHash(ByVal Pass As String, ByVal Salt As String) As String
+        Dim Bytes As Byte() = Encoding.ASCII.GetBytes(Pass & Salt)
+        Dim SHA512 As New SHA512Managed
+        Dim CalculatedHash As Byte() = SHA512.ComputeHash(Bytes)
+        Dim Result As String = Convert.ToBase64String(Bytes)
+        Return Result
+    End Function
+
+End Class
