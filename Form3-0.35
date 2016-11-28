@@ -1,0 +1,58 @@
+Public Class Form3
+
+    Dim Page As Integer = 1
+    Dim notices As String = "D:\notices.txt"
+
+    'This button loads in the monthly notices to be viewed from the relevant text file
+    Private Sub Form3_Load(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles MyBase.Load
+        Dim NoticeReader As New System.IO.StreamReader(notices)
+        RichTextBox1.Text = NoticeReader.ReadToEnd()
+        Button4.Enabled = False
+    End Sub
+
+
+    Private Sub Button3_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles Button3.Click
+        Page += 2
+        Button4.Enabled = True
+        Label1.Text = "Page " & Page
+        Label2.Text = "Page " & Page + 1
+        ListBox2.Visible = True
+        Panel2.BackgroundImage = My.Resources.transparent
+        'Fix this shiz bruh
+    End Sub
+
+    Private Sub Button4_Click(sender As System.Object, e As System.EventArgs) Handles Button4.Click
+        Page -= 2
+        Label1.Text = "Page " & Page
+        Label2.Text = "Page " & Page + 1
+        If Page <= 1 Then
+            Button4.Enabled = False
+            ListBox2.Visible = False
+            Panel2.BackgroundImage = My.Resources.cover
+        End If
+    End Sub
+
+    Private Sub Button1_Click(sender As System.Object, e As System.EventArgs) Handles Button1.Click
+        Dim Programme As String = "F:\Programme.pdf"
+        If System.IO.File.Exists(Programme) = True Then
+            Process.Start(Programme)
+        Else
+            MsgBox("File could not be found, please contact staff.")
+        End If
+    End Sub
+
+    Private Sub Button2_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles Button2.Click
+        Dim Comp As String = "F:\Comp.ods"
+        If System.IO.File.Exists(Comp) = True Then
+            Process.Start(Comp)
+        Else
+            MsgBox("File could not be found, please contact staff.")
+        End If
+    End Sub
+
+    Private Sub Button5_Click(sender As System.Object, e As System.EventArgs) Handles Button5.Click
+        Form1.Close()
+        Form2.Close()
+        Me.Close()
+    End Sub
+End Class

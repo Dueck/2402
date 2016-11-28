@@ -1,0 +1,113 @@
+Imports System.Text 'Used for streamreader/streamwriter
+Imports System.Security.Cryptography 'Used for SHA512 hashing 
+
+Public Class Form1
+
+    'Assignment of files required for storage of user details 
+    Dim UserFile As String = "D:\usernames.txt"
+    Dim SaltFile As String = "D:\salts.txt"
+    Dim PassFile As String = "D:\passwords.txt"
+
+    'This sub takes the input login and passes it to other functions to check that the login is correct
+    Private Sub Button1_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles Button1.Click
+        Dim User As String = TextBox1.Text
+        Dim Pass As String = TextBox2.Text
+        Dim UserNumber As Integer = CheckUser(User)
+        If UserNumber <> 0 Then
+            Dim Salt As String = GetSalt(UserNumber)
+            Dim CalculatedHash As String = CalculateHash(Pass, Salt)
+            If CheckLogin(User, Pass, CalculatedHash, UserNumber) = True Then
+                MsgBox("Welcome, " & User & "!")
+                Dim file As String = "F:\" & User & ".txt"
+                Dim sr As New System.IO.StreamReader(file)
+                If sr.ReadLine() = "True" Then
+                    Form4.Show()
+                Else
+                    Form3.Show()
+                End If
+                Timer1.Stop()
+                Me.Hide()
+            End If
+        End If
+    End Sub
+
+    'This function takes the entered password and salt and calculates the corresponding SHA512 Hash
+    Public Function CalculateHash(ByVal Pass As String, ByVal Salt As String) As String
+        Dim Bytes As Byte() = Encoding.ASCII.GetBytes(Pass & Salt)
+        Dim SHA512 As New SHA512Managed
+        Dim CalculatedHash As Byte() = SHA512.ComputeHash(Bytes)
+        Dim Result As String = Convert.ToBase64String(Bytes)
+        Return Result
+    End Function
+
+    'This function checks that the required file exists and that the user exists in that file
+    'If the user is found it returns the corresponding line number in the file, otherwise return 0
+    Public Function CheckUser(ByVal User As String) As Integer
+        Dim UserReader As New System.IO.StreamReader(UserFile)
+        If System.IO.File.Exists(UserFile) Then
+            Dim LineNumber As Integer = 1
+            Dim UserFound As Boolean = False
+            Do Until UserReader.Peek() = -1 Or UserFound = True
+                Dim CurrentLine As String = UserReader.ReadLine
+                If CurrentLine = User Then
+                    UserFound = True
+                    Exit Do
+                End If
+                LineNumber += 1
+            Loop
+            If UserFound = False Then
+                MsgBox("Access denied: User does not exist")
+                Return 0
+            End If
+            UserReader.Close()
+            Return LineNumber
+        Else
+            MsgBox("Access Denied: Files not found. Please contact a member of staff")
+            Return 0
+        End If
+    End Function
+
+    'This function looks up the corresponding salt to the user so it may be used to calculate a hash
+    Public Function GetSalt(ByVal UserNumber As Integer) As String
+        Dim SaltReader As New System.IO.StreamReader(SaltFile)
+        If System.IO.File.Exists(SaltFile) Then
+            For i As Integer = 1 To UserNumber - 1
+                SaltReader.ReadLine()
+            Next
+            Dim result As String = SaltReader.ReadLine()
+            SaltReader.Close()
+            Return result
+        Else
+            Return 0
+        End If
+    End Function
+
+    'This function takes the calculated hash and checks it against the real one held in the file
+    Public Function CheckLogin(ByVal User As String, ByVal Pass As String, ByVal CalculatedHash As String, ByVal usernumber As Integer) As Boolean
+        Dim PassReader As New System.IO.StreamReader(PassFile)
+        For i = 1 To usernumber - 1
+            PassReader.ReadLine()
+        Next
+        Dim RealHash As String = PassReader.ReadLine()
+        If RealHash = CalculatedHash Then
+            Return True
+        Else
+            MsgBox("Access Denied: Invalid password")
+            Return False
+        End If
+    End Function
+
+    'This subroutine opens the New User form
+    Private Sub Button2_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles Button2.Click
+        Form2.Show()
+    End Sub
+
+    Private Sub Form1_Load(sender As System.Object, e As System.EventArgs) Handles MyBase.Load
+        Timer1.Start()
+    End Sub
+
+    Private Sub Timer1_Tick(sender As System.Object, e As System.EventArgs) Handles Timer1.Tick
+        Me.Text = "2402 Squadron ATC - " & DateTime.Now()
+    End Sub
+    
+End Class
